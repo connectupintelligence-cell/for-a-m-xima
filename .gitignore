@@ -1,0 +1,16 @@
+# Windows thumbnails
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Folder config file
+Desktop.ini
+
+# Editor / IDE configs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

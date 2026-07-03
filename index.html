@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Academia Força Máxima - São Bento do Sapucaí. Seu controle de treinos, evolução e pagamentos em um só lugar.">
+    <title>Academia Força Máxima - Painel do Aluno & Professor</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top Simulator Bar for Role Switching -->
+    <div class="simulator-bar">
+        <div class="simulator-container">
+            <span><i class="fa-solid fa-flask-vial"></i> Modo de Teste:</span>
+            <div class="role-selector">
+                <button class="role-btn active" data-role="aluno" onclick="switchRole('aluno')">
+                    <i class="fa-solid fa-user-ninja"></i> Aluno
+                </button>
+                <button class="role-btn" data-role="professor" onclick="switchRole('professor')">
+                    <i class="fa-solid fa-dumbbell"></i> Professor
+                </button>
+                <button class="role-btn" data-role="admin" onclick="switchRole('admin')">
+                    <i class="fa-solid fa-user-tie"></i> ADM (Financeiro)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navigation Header -->
+    <header class="main-header">
+        <div class="header-container">
+            <div class="logo-area">
+                <div class="logo-custom">
+                    <svg viewBox="0 0 320 85" width="210" height="55">
+                        <path d="M15,40 Q55,22 95,40" stroke="var(--logo-lines)" stroke-width="2.5" fill="none" stroke-linecap="round" />
+                        <path d="M10,48 Q55,27 100,48" stroke="var(--logo-lines)" stroke-width="2.5" fill="none" stroke-linecap="round" />
+                        <path d="M5,56 Q55,32 105,56" stroke="var(--logo-lines)" stroke-width="2.5" fill="none" stroke-linecap="round" />
+                        <path d="M0,64 Q55,37 110,64" stroke="var(--logo-lines)" stroke-width="2.5" fill="none" stroke-linecap="round" />
+                        <text x="55" y="16" font-family="'Outfit', sans-serif" font-size="10.5" font-weight="700" fill="var(--logo-lines)" letter-spacing="1.5" text-anchor="middle">ACADEMIA</text>
+                        <text x="120" y="42" font-family="'Outfit', sans-serif" font-size="36" font-weight="300" fill="var(--color-primary)" letter-spacing="0">força</text>
+                        <text x="120" y="74" font-family="'Outfit', sans-serif" font-size="34" font-weight="800" fill="var(--color-primary)" letter-spacing="1.5">MÁXIMA</text>
+                    </svg>
+                </div>
+            </div>
+            
+            <!-- Quick navigation links matching active role -->
+            <nav class="main-nav">
+                <!-- Aluno Nav -->
+                <div class="nav-group active" id="nav-aluno">
+                    <a href="#aluno-dashboard" class="nav-link active" onclick="scrollToView('aluno-dashboard')"><i class="fa-solid fa-house"></i> Início</a>
+                    <a href="#aluno-treinos" class="nav-link" onclick="scrollToView('aluno-treinos')"><i class="fa-solid fa-calendar-check"></i> Meus Treinos</a>
+                    <a href="#aluno-financeiro" class="nav-link" onclick="scrollToView('aluno-financeiro')"><i class="fa-solid fa-wallet"></i> Pagamentos</a>
+                    <a href="#aluno-cadastro" class="nav-link" onclick="scrollToView('aluno-cadastro')"><i class="fa-solid fa-address-card"></i> Avaliação</a>
+                </div>
+                <!-- Professor/Admin Nav -->
+                <div class="nav-group" id="nav-professor">
+                    <a href="#prof-dashboard" class="nav-link active" onclick="scrollToView('prof-dashboard')"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+                    <a href="#prof-alunos" class="nav-link" onclick="scrollToView('prof-alunos')"><i class="fa-solid fa-users"></i> Alunos</a>
+                </div>
+                <div class="nav-group" id="nav-admin">
+                    <a href="#admin-dashboard" class="nav-link active" onclick="scrollToView('admin-dashboard')"><i class="fa-solid fa-chart-pie"></i> Painel Geral</a>
+                    <a href="#prof-alunos" class="nav-link" onclick="scrollToView('prof-alunos')"><i class="fa-solid fa-users"></i> Alunos & Fichas</a>
+                    <a href="#admin-financeiro" class="nav-link" onclick="scrollToView('admin-financeiro')"><i class="fa-solid fa-money-bill-trend-up"></i> Financeiro</a>
+                </div>
+            </nav>
+
+            <div class="header-actions">
+                <span class="user-badge" id="current-user-badge">
+                    <i class="fa-solid fa-circle-user"></i> <span id="current-user-name">Aluno de Teste</span>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="app-main">
+        
+        <!-- ==================== ALUNO VIEW ==================== -->
+        <div id="aluno-dashboard" class="app-view active">
+            <!-- 1. Aluno Onboarding Notification (if not registered yet) -->
+            <div id="registration-alert" class="card alert-card hidden">
+                <div class="alert-content">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>
+                        <h4>Complete seu Cadastro e Avaliação Física</h4>
+                        <p>Para gerar sua ficha de treino personalizada ou escolher os seus exercícios, insira suas informações de saúde e objetivos.</p>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="scrollToView('aluno-cadastro')">Começar Agora</button>
+            </div>
+
+            <!-- 2. Aluno Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- User Profile Card -->
+                <div class="card profile-summary-card">
+                    <div class="profile-header">
+                        <div class="avatar"><i class="fa-solid fa-user-astronaut"></i></div>
+                        <div>
+                            <h3 id="dash-student-name">Felipe Silva</h3>
+                            <span class="badge badge-success" id="dash-payment-status"><i class="fa-solid fa-check-double"></i> Ativo</span>
+                        </div>
+                    </div>
+                    <div class="profile-stats">
+                        <div class="stat-box">
+                            <span class="stat-value" id="dash-stat-weight">78kg</span>
+                            <span class="stat-label">Peso Atual</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-value" id="dash-stat-goal">Hipertrofia</span>
+                            <span class="stat-label">Objetivo</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-value" id="dash-stat-days">3x</span>
+                            <span class="stat-label">Meta Semanal</span>
+                        </div>
+                    </div>
+                    <div class="profile-footer-links">
+                        <a href="https://www.instagram.com/academiaforcamaximasbs/" target="_blank" class="insta-link"><i class="fa-brands fa-instagram"></i> @academiaforcamaximasbs</a>
+                    </div>
+                </div>
+
+                <!-- Workout Summary / Streak -->
+                <div class="card workout-streak-card">
+                    <h3 class="card-title"><i class="fa-solid fa-fire text-primary"></i> Foco Máximo Semanal</h3>
+                    <p class="card-subtitle">Complete seus exercícios para bater a meta semanal!</p>
+                    <div class="week-days-container">
+                        <div class="week-day" id="day-0"><span>D</span><div class="circle"><i class="fa-solid fa-check"></i></div></div>
+                        <div class="week-day" id="day-1"><span>S</span><div class="circle"><i class="fa-solid fa-check"></i></div></div>
+                        <div class="week-day" id="day-2"><span>T</span><div class="circle"><i class="fa-solid fa-check"></i></div></div>
+                        <div class="week-day" id="day-3"><span>Q</span><div class="circle"><i class="fa-solid fa-check"></i></div></div>
+                        <div class="week-day" id="day-4"><span>Q</span><div class="circle"><i class="fa-solid fa-check"></i></div></div>
+                        <div class="week-day" id="day-5"><span>S</span><div class="circle"><i class="fa-solid fa-check"></i></div></div>
+                        <div class="week-day" id="day-6"><span>S</span><div class="circle"><i class="fa-solid fa-check"></i></div></div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-info">
+                            <span>Evolução da Ficha Atual</span>
+                            <span id="streak-progress-text">2 de 3 treinos realizados</span>
+                        </div>
+                        <div class="progress-bar-outer">
+                            <div class="progress-bar-inner" id="streak-progress-bar" style="width: 66%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Quick Card -->
+                <div class="card payment-summary-card">
+                    <h3 class="card-title"><i class="fa-solid fa-wallet text-secondary"></i> Mensalidade e Plano</h3>
+                    <div class="payment-info-box">
+                        <div class="plan-badge">Plano <span id="dash-plan-name">Mensal</span></div>
+                        <div class="price-badge">R$ <span id="dash-plan-price">99,90</span>/mês</div>
+                    </div>
+                    <div class="billing-date-alert">
+                        <i class="fa-regular fa-calendar"></i> Próxima cobrança: <strong id="dash-billing-date">15/07/2026</strong>
+                    </div>
+                    <button class="btn btn-secondary btn-block" onclick="scrollToView('aluno-financeiro')">Gerenciar Finanças</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Aluno Workout Sheet Section -->
+        <div id="aluno-treinos" class="section-container app-view">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Minha Ficha de Treinos</h2>
+                        <p class="section-subtitle" id="workout-creator-info">Montada pelo Professor: Marcos Lima (Atualizada em 20/06/2026)</p>
+                    </div>
+                    <div class="section-actions">
+                        <button class="btn btn-outline" onclick="openExerciseCatalog()"><i class="fa-solid fa-circle-plus"></i> Customizar Treino</button>
+                    </div>
+                </div>
+
+                <div class="workout-sheet-control">
+                    <div class="workout-tabs" id="workout-tabs-container">
+                        <!-- JavaScript will generate workout sheet tabs A, B, C here -->
+                        <button class="tab-btn active">Treino A (Peito/Tríceps)</button>
+                        <button class="tab-btn">Treino B (Costas/Bíceps)</button>
+                        <button class="tab-btn">Treino C (Pernas/Ombro)</button>
+                    </div>
+                    <div class="workout-type-toggle">
+                        <span class="label">Origem do treino:</span>
+                        <div class="toggle-buttons">
+                            <button id="btn-origin-teacher" class="toggle-btn active" onclick="setWorkoutOrigin('teacher')">Professor</button>
+                            <button id="btn-origin-custom" class="toggle-btn" onclick="setWorkoutOrigin('custom')">Autônomo (Eu mesmo)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="exercise-list-container" id="student-exercise-list">
+                    <!-- Exercise items generated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- 4. Aluno Questionnaire & Physical Info (Cadastro) -->
+            <div id="aluno-cadastro" class="section-container app-view">
+                <h2 class="section-title">Ficha de Avaliação & Dados Pessoais</h2>
+                <p class="section-subtitle">Mantenha seus dados atualizados para melhorar seus resultados e segurança física.</p>
+                
+                <form id="student-onboarding-form" onsubmit="saveStudentRegistration(event)" class="card form-card">
+                    <div class="form-grid">
+                        <div class="form-section-title">Dados Pessoais</div>
+                        
+                        <div class="form-group">
+                            <label for="personal-name">Nome Completo</label>
+                            <input type="text" id="personal-name" required placeholder="Digite seu nome">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="personal-phone">Celular (WhatsApp)</label>
+                            <input type="tel" id="personal-phone" required placeholder="(12) 99999-9999">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="personal-email">E-mail</label>
+                            <input type="email" id="personal-email" required placeholder="exemplo@gmail.com">
+                        </div>
+
+                        <div class="form-section-title">Avaliação Física & Metas</div>
+
+                        <div class="form-group">
+                            <label for="physical-weight">Peso Atual (kg)</label>
+                            <input type="number" id="physical-weight" step="0.1" required placeholder="Ex: 75.5">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="physical-height">Altura (cm)</label>
+                            <input type="number" id="physical-height" required placeholder="Ex: 175">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="physical-frequency">Quantas vezes pretende treinar por semana?</label>
+                            <select id="physical-frequency" required>
+                                <option value="2">2x por semana</option>
+                                <option value="3" selected>3x por semana</option>
+                                <option value="4">4x por semana</option>
+                                <option value="5">5x por semana</option>
+                                <option value="6">Todos os dias (6x)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="physical-goal">Qual é o seu objetivo principal?</label>
+                            <select id="physical-goal" required>
+                                <option value="hipertrofia">Ganho de Massa Muscular (Hipertrofia)</option>
+                                <option value="emagrecimento">Perda de Peso / Definição</option>
+                                <option value="condicionamento">Resistência / Condicionamento Físico</option>
+                                <option value="saude">Qualidade de Vida / Reabilitação</option>
+                            </select>
+                        </div>
+
+                        <div class="form-section-title">Histórico de Saúde & Limitações</div>
+
+                        <div class="form-group col-span-2">
+                            <label for="health-limitations">Você possui alguma lesão ou limitação física? (Ex: dor no joelho, hérnia, etc.)</label>
+                            <textarea id="health-limitations" rows="3" placeholder="Se possuir, detalhe aqui para que os treinos evitem sobrecarregar a área lesionada..."></textarea>
+                        </div>
+
+                        <div class="form-group col-span-2">
+                            <label for="health-conditions">Histórico de doenças crônicas ou cardiovasculares (Ex: hipertensão, diabetes, asma)</label>
+                            <textarea id="health-conditions" rows="2" placeholder="Ex: Hipertensão leve, sob controle de medicação."></textarea>
+                        </div>
+
+                        <div class="form-section-title">Preferência de Treino</div>
+
+                        <div class="form-group col-span-2">
+                            <label>Como deseja montar sua ficha de exercícios?</label>
+                            <div class="radio-card-group">
+                                <label class="radio-card">
+                                    <input type="radio" name="preference-origin" value="teacher" checked>
+                                    <div class="radio-card-content">
+                                        <i class="fa-solid fa-user-tie"></i>
+                                        <div>
+                                            <strong>Quero que o Professor elabore</strong>
+                                            <p>A equipe da Força Máxima criará uma ficha personalizada baseada nas suas limitações.</p>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="radio-card">
+                                    <input type="radio" name="preference-origin" value="custom">
+                                    <div class="radio-card-content">
+                                        <i class="fa-solid fa-hand-holding-hand"></i>
+                                        <div>
+                                            <strong>Quero montar sozinho(a)</strong>
+                                            <p>Você terá total autonomia para escolher os exercícios diretamente de nosso catálogo.</p>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salvar Avaliação</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 5. Aluno Finance Panel -->
+            <div id="aluno-financeiro" class="section-container app-view">
+                <h2 class="section-title">Gerenciamento Financeiro</h2>
+                <p class="section-subtitle">Autonomia total sobre seus pagamentos e assinaturas da Força Máxima.</p>
+
+                <div class="finance-grid">
+                    <!-- Left: Select Plan and Payment Method -->
+                    <div class="card finance-selector-card">
+                        <h3 class="card-title">Escolha ou Modifique seu Plano</h3>
+                        <div class="plan-options">
+                            <!-- Monthly -->
+                            <div class="plan-option-card active" id="plan-mensal" onclick="selectPlan('mensal', 99.90)">
+                                <div class="plan-header">
+                                    <h4>Mensal</h4>
+                                    <span class="popular-badge">Recorrente</span>
+                                </div>
+                                <div class="plan-price">
+                                    <span class="currency">R$</span>
+                                    <span class="value">99,90</span>
+                                    <span class="period">/mês</span>
+                                </div>
+                                <p class="plan-desc">Ideal para quem quer flexibilidade sem compromisso de longo prazo.</p>
+                            </div>
+                            <!-- Semestral -->
+                            <div class="plan-option-card" id="plan-semestral" onclick="selectPlan('semestral', 499.00)">
+                                <div class="plan-header">
+                                    <h4>Semestral</h4>
+                                    <span class="popular-badge">Desconto</span>
+                                </div>
+                                <div class="plan-price">
+                                    <span class="currency">R$</span>
+                                    <span class="value">83,16</span>
+                                    <span class="period">/mês</span>
+                                </div>
+                                <p class="plan-desc">Pagamento único de R$ 499,00. Economize 16% em relação ao mensal.</p>
+                            </div>
+                            <!-- Anual -->
+                            <div class="plan-option-card" id="plan-anual" onclick="selectPlan('anual', 899.00)">
+                                <div class="plan-header">
+                                    <h4>Anual</h4>
+                                    <span class="popular-badge">Melhor Valor</span>
+                                </div>
+                                <div class="plan-price">
+                                    <span class="currency">R$</span>
+                                    <span class="value">74,91</span>
+                                    <span class="period">/mês</span>
+                                </div>
+                                <p class="plan-desc">Pagamento único de R$ 899,00. Economize 25% em relação ao mensal.</p>
+                            </div>
+                        </div>
+
+                        <div class="payment-method-selector">
+                            <h4 class="sub-title">Forma de Pagamento</h4>
+                            <div class="tabs-payment">
+                                <button id="tab-pix-btn" class="pay-tab active" onclick="switchPaymentTab('pix')"><i class="fa-brands fa-pix text-secondary"></i> Pagar via PIX</button>
+                                <button id="tab-cc-btn" class="pay-tab" onclick="switchPaymentTab('cc')"><i class="fa-solid fa-credit-card"></i> Cartão de Crédito</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Dynamic checkout info based on choice -->
+                    <div class="card finance-details-card">
+                        <!-- PIX Checkout Container -->
+                        <div id="checkout-pix" class="checkout-method">
+                            <h3 class="card-title text-center">Pagamento instantâneo via PIX</h3>
+                            <div class="pix-qr-box">
+                                <!-- Standard Simulated QR Code using SVG lines -->
+                                <svg viewBox="0 0 100 100" class="qr-svg" width="180" height="180">
+                                    <rect width="100" height="100" fill="white" />
+                                    <!-- Simple mock QR pattern -->
+                                    <rect x="5" y="5" width="25" height="25" fill="black" />
+                                    <rect x="10" y="10" width="15" height="15" fill="white" />
+                                    <rect x="70" y="5" width="25" height="25" fill="black" />
+                                    <rect x="75" y="10" width="15" height="15" fill="white" />
+                                    <rect x="5" y="70" width="25" height="25" fill="black" />
+                                    <rect x="10" y="75" width="15" height="15" fill="white" />
+                                    <!-- Scattered blocks representing data -->
+                                    <rect x="40" y="20" width="8" height="8" fill="black" />
+                                    <rect x="50" y="10" width="8" height="15" fill="black" />
+                                    <rect x="45" y="45" width="12" height="12" fill="black" />
+                                    <rect x="25" y="45" width="10" height="8" fill="black" />
+                                    <rect x="70" y="40" width="15" height="10" fill="black" />
+                                    <rect x="75" y="75" width="20" height="20" fill="black" />
+                                    <rect x="80" y="60" width="10" height="10" fill="black" />
+                                </svg>
+                            </div>
+                            <p class="pix-instruction">Escaneie o QR Code acima usando o aplicativo do seu banco para pagar.</p>
+                            
+                            <div class="pix-copypaste">
+                                <label for="pix-key-val">PIX Copia e Cola:</label>
+                                <div class="copy-input-group">
+                                    <input type="text" readonly id="pix-key-val" value="00020101021226830014br.gov.bcb.pix2561academiaforcamaxima-sbs-sp-production-key-9991283">
+                                    <button class="btn btn-primary" onclick="copyPixKey()"><i class="fa-solid fa-copy"></i> Copiar</button>
+                                </div>
+                            </div>
+                            
+                            <div class="pix-feedback hidden" id="pix-success-msg">
+                                <i class="fa-solid fa-circle-check"></i> Pagamento confirmado no simulador!
+                            </div>
+                            <button class="btn btn-secondary btn-block mt-4" onclick="simulatePixPayment()"><i class="fa-solid fa-receipt"></i> Confirmar Pagamento de Teste</button>
+                        </div>
+
+                        <!-- Credit Card Checkout Container -->
+                        <div id="checkout-cc" class="checkout-method hidden">
+                            <h3 class="card-title">Cadastrar Cartão de Crédito</h3>
+                            <form id="credit-card-form" onsubmit="saveCreditCard(event)">
+                                <div class="form-group">
+                                    <label for="cc-name">Nome Impresso no Cartão</label>
+                                    <input type="text" id="cc-name" required placeholder="MARCOS A SILVA">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cc-num">Número do Cartão</label>
+                                    <input type="text" id="cc-num" required placeholder="4444 5555 6666 7777" maxlength="19">
+                                </div>
+                                <div class="form-row-2">
+                                    <div class="form-group">
+                                        <label for="cc-exp">Validade</label>
+                                        <input type="text" id="cc-exp" required placeholder="MM/AA" maxlength="5">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="cc-cvv">CVV</label>
+                                        <input type="password" id="cc-cvv" required placeholder="123" maxlength="4">
+                                    </div>
+                                </div>
+                                <div class="saved-cards-status">
+                                    <i class="fa-solid fa-shield-halved"></i> Seus dados de cartão são processados e armazenados com criptografia de ponta a ponta.
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-credit-card"></i> Salvar Cartão de Crédito</button>
+                            </form>
+                            <div id="cc-saved-success" class="alert-box alert-success mt-4 hidden">
+                                <i class="fa-solid fa-circle-check"></i> Cartão salvo com sucesso para cobrança recorrente!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        <!-- ==================== PROFESSOR VIEW ==================== -->
+        <div id="prof-dashboard" class="app-view">
+            <!-- 1. Professor Dashboard Statistics -->
+            <div class="dashboard-grid">
+                <div class="card stat-card">
+                    <div class="stat-icon bg-red"><i class="fa-solid fa-users"></i></div>
+                    <div class="stat-content">
+                        <span class="stat-title">Alunos Ativos</span>
+                        <span class="stat-number" id="prof-stat-total-students">42</span>
+                    </div>
+                </div>
+                <div class="card stat-card warning">
+                    <div class="stat-icon bg-yellow"><i class="fa-solid fa-hourglass-half"></i></div>
+                    <div class="stat-content">
+                        <span class="stat-title">Fichas Vencidas (+90 dias)</span>
+                        <span class="stat-number text-yellow" id="prof-stat-outdated-sheets">3</span>
+                    </div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-icon bg-green"><i class="fa-solid fa-check"></i></div>
+                    <div class="stat-content">
+                        <span class="stat-title">Treinos Hoje</span>
+                        <span class="stat-number text-green" id="prof-stat-today-trainings">14</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Student Search and List Table -->
+        <div id="prof-alunos" class="section-container app-view">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Gerenciamento de Alunos</h2>
+                        <p class="section-subtitle">Acompanhe a frequência, objetivos e atualize as fichas de treino.</p>
+                    </div>
+                </div>
+
+                <div class="search-bar-container card">
+                    <div class="search-input-wrapper">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="student-search-input" placeholder="Buscar aluno por nome, telefone ou objetivo..." oninput="filterStudentTable()">
+                    </div>
+                    <div class="filter-wrapper">
+                        <label for="status-filter">Filtrar Ficha:</label>
+                        <select id="status-filter" onchange="filterStudentTable()">
+                            <option value="todos">Todos</option>
+                            <option value="vencida">Fichas Vencidas</option>
+                            <option value="ok">Fichas Atualizadas</option>
+                            <option value="autonomo">Alunos Autônomos</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="card table-card">
+                    <div class="table-responsive">
+                        <table class="students-table" id="students-table-el">
+                            <thead>
+                                <tr>
+                                    <th>Nome do Aluno</th>
+                                    <th>Objetivo</th>
+                                    <th>Freq. Semanal</th>
+                                    <th>Última Atualização</th>
+                                    <th>Status Ficha</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="students-table-body">
+                                <!-- Populated dynamically by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Student Details / Exercise Sheet Editor Modal (Overlay/Inline depending on viewport) -->
+        <div id="student-sheet-editor-container" class="section-container app-view">
+                <div class="card editor-card">
+                    <div class="editor-header">
+                        <div>
+                            <span class="badge-role">Professor / Editor de Fichas</span>
+                            <h2 class="editor-title" id="editor-student-name">Editando Ficha de João Carlos</h2>
+                            <p class="editor-subtitle" id="editor-student-health-summary">Física: 82kg | Histórico: Dor no ombro esquerdo</p>
+                        </div>
+                        <button class="btn btn-outline btn-sm" onclick="closeSheetEditor()"><i class="fa-solid fa-xmark"></i> Fechar Editor</button>
+                    </div>
+
+                    <!-- Physical evaluation summary in Editor -->
+                    <div class="editor-info-summary">
+                        <div class="info-block">
+                            <strong>Objetivo:</strong> <span id="ed-student-goal">Hipertrofia</span>
+                        </div>
+                        <div class="info-block">
+                            <strong>Freq. Planejada:</strong> <span id="ed-student-freq">4x por semana</span>
+                        </div>
+                        <div class="info-block">
+                            <strong>Limitações e Saúde:</strong> <span id="ed-student-health" class="text-warning">Nenhuma</span>
+                        </div>
+                    </div>
+
+                    <!-- Ficha Editor tabs -->
+                    <div class="workout-editor-tabs-bar">
+                        <div class="editor-tabs" id="editor-tabs-container">
+                            <!-- Loaded dynamically -->
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="openExerciseCatalogForEditor()"><i class="fa-solid fa-plus"></i> Inserir Exercício</button>
+                    </div>
+
+                    <!-- Exercises under selected tab -->
+                    <div class="editor-exercises-list" id="editor-exercises-list">
+                        <!-- Loaded dynamically -->
+                    </div>
+
+                    <div class="editor-footer-actions">
+                        <button class="btn btn-outline" onclick="closeSheetEditor()">Cancelar</button>
+                        <button class="btn btn-primary" onclick="saveStudentSheet()"><i class="fa-solid fa-cloud-arrow-up"></i> Publicar Alterações na Ficha</button>
+                    </div>
+                </div>
+            </div>
+
+        <!-- ==================== ADMIN VIEW ==================== -->
+        <div id="admin-dashboard" class="app-view">
+            <!-- 1. Admin Dashboard Statistics (Includes Financial metrics) -->
+            <div class="dashboard-grid">
+                <div class="card stat-card">
+                    <div class="stat-icon bg-green"><i class="fa-solid fa-dollar-sign"></i></div>
+                    <div class="stat-content">
+                        <span class="stat-title">Faturamento Mensal Estimado</span>
+                        <span class="stat-number text-green" id="admin-stat-total-revenue">R$ 4.290,00</span>
+                    </div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-icon bg-blue"><i class="fa-solid fa-user-check"></i></div>
+                    <div class="stat-content">
+                        <span class="stat-title">Mensalidades Confirmadas</span>
+                        <span class="stat-number text-blue" id="admin-stat-paid-count">38 / 42</span>
+                    </div>
+                </div>
+                <div class="card stat-card warning">
+                    <div class="stat-icon bg-red"><i class="fa-solid fa-circle-exclamation"></i></div>
+                    <div class="stat-content">
+                        <span class="stat-title">Pendentes / Não Pagos</span>
+                        <span class="stat-number text-red" id="admin-stat-pending-count">4</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Admin Financial Section -->
+        <div id="admin-financeiro" class="section-container app-view">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Controle Financeiro da Academia</h2>
+                        <p class="section-subtitle">Gestão administrativa de mensalidades, vencimentos e verificação de pagamentos.</p>
+                    </div>
+                </div>
+
+                <div class="search-bar-container card">
+                    <div class="search-input-wrapper">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="admin-search-input" placeholder="Buscar aluno por nome para verificar pagamento..." oninput="filterAdminFinanceTable()">
+                    </div>
+                    <div class="filter-wrapper">
+                        <label for="payment-status-filter">Filtrar Situação:</label>
+                        <select id="payment-status-filter" onchange="filterAdminFinanceTable()">
+                            <option value="todos">Todos</option>
+                            <option value="pendente">Pendente / Em Atraso</option>
+                            <option value="pago">Confirmado / Pago</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="card table-card">
+                    <div class="table-responsive">
+                        <table class="students-table" id="admin-finance-table">
+                            <thead>
+                                <tr>
+                                    <th>Nome do Aluno</th>
+                                    <th>Plano Ativo</th>
+                                    <th>Vencimento</th>
+                                    <th>Valor Plano</th>
+                                    <th>Forma Pagto.</th>
+                                    <th>Situação</th>
+                                    <th>Ações Financeiras</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-finance-table-body">
+                                <!-- Populated dynamically by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+    </main>
+
+    <!-- ==================== DIALOGS & OVERLAYS ==================== -->
+
+    <!-- Exercise Catalog Modal for adding custom exercises (Student or Editor) -->
+    <div id="exercise-catalog-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="catalog-modal-title">Catálogo de Exercícios</h3>
+                <button class="modal-close-btn" onclick="closeExerciseCatalog()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="catalog-filters">
+                <div class="muscle-groups-tabs" id="muscle-groups-container">
+                    <!-- Loaded dynamically, e.g. Peito, Costas, Pernas, etc. -->
+                </div>
+            </div>
+
+            <div class="catalog-list" id="catalog-exercises-list">
+                <!-- Exercise cards with Add buttons loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Exercise Detail/Demonstration Modal -->
+    <div id="exercise-demo-modal" class="modal-overlay hidden">
+        <div class="modal-content modal-content-sm">
+            <div class="modal-header">
+                <h3 class="modal-title" id="demo-modal-title">Agachamento Livre</h3>
+                <button class="modal-close-btn" onclick="closeExerciseDemo()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="demo-modal-body">
+                <!-- SVG Vector animation representation -->
+                <div class="exercise-demo-visual" id="demo-visual-container">
+                    <!-- Loaded dynamically via js matching the exercise -->
+                </div>
+                
+                <div class="exercise-details-text">
+                    <h4>Execução Recomendada</h4>
+                    <p id="demo-modal-desc">Afaste os pés na largura dos ombros, mantenha a coluna reta e agache até que as coxas fiquem paralelas ao chão. Mantenha os calcanhares no chão e empurre para cima.</p>
+                    
+                    <div class="demo-attributes">
+                        <div class="attr-chip"><i class="fa-solid fa-bullseye"></i> Alvo: <span id="demo-modal-target">Pernas (Quadríceps)</span></div>
+                        <div class="attr-chip"><i class="fa-solid fa-arrows-to-eye"></i> Dica: <span id="demo-modal-tip">Não tire os calcanhares do chão.</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification for Micro-interactions -->
+    <div id="toast" class="toast-notification hidden">
+        <span id="toast-text">Exercício concluído! +10xp</span>
+    </div>
+
+    <!-- Gym Footer -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <p>&copy; 2026 Academia Força Máxima - São Bento do Sapucaí - SP</p>
+            <p class="developed-by">Desenvolvido com excelência técnica para o alto rendimento.</p>
+        </div>
+    </footer>
+
+    <!-- Main JavaScript Application -->
+    <script src="app.js"></script>
+</body>
+</html>
