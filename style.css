@@ -1906,3 +1906,274 @@ a {
         padding-bottom: 5px;
     }
 }
+
+/* ==========================================
+   WIZARD AND SET TRACKER STYLES (UPDATE 1)
+   ========================================== */
+
+.modal-large {
+    max-width: 1000px;
+    width: 95%;
+}
+
+.wizard-layout-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 24px;
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(75vh - 100px);
+    padding-right: 4px;
+    margin-top: 15px;
+}
+
+.wizard-left-pane, .wizard-right-pane {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.wizard-catalog-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    max-height: 400px;
+    padding-right: 4px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 8px;
+    background-color: var(--color-bg-darker);
+}
+
+.wizard-item-card {
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.wizard-item-card:hover, .wizard-item-card.selected {
+    border-color: var(--color-primary);
+    background-color: rgba(255, 46, 59, 0.04);
+}
+
+.wizard-item-text strong {
+    font-size: 0.95rem;
+    display: block;
+    color: var(--color-text-white);
+}
+
+.wizard-item-text span {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+.mb-3 { margin-bottom: 12px; }
+.mb-4 { margin-bottom: 16px; }
+
+/* Image Upload Area styling */
+.image-upload-area {
+    background-color: var(--color-bg-darker);
+    border: 2px dashed var(--color-border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    position: relative;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-smooth);
+}
+
+.image-upload-area:hover {
+    border-color: var(--color-secondary);
+}
+
+.upload-trigger {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-text-muted);
+}
+
+.upload-trigger:hover {
+    color: var(--color-text-white);
+}
+
+.upload-icon {
+    font-size: 1.8rem;
+    color: var(--color-secondary);
+}
+
+.upload-preview {
+    position: absolute;
+    inset: 0;
+    background-color: var(--color-bg-darker);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.upload-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+}
+
+.btn-remove-preview {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: var(--color-danger);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.btn-remove-preview:hover {
+    transform: scale(1.1);
+}
+
+/* Form layouts */
+.form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.custom-exercise-card {
+    border-color: var(--color-border);
+}
+
+/* Set-by-Set tracker display */
+.exercise-sets-tracker {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+    border-top: 1px solid var(--color-border);
+    padding-top: 12px;
+    width: 100%;
+}
+
+.set-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    border-radius: 10px;
+    background-color: var(--color-bg-darker);
+    transition: var(--transition-smooth);
+    border: 1px solid transparent;
+}
+
+.set-row.checked-done {
+    background-color: rgba(16, 185, 129, 0.04);
+    border-color: rgba(16, 185, 129, 0.15);
+}
+
+.set-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    min-width: 60px;
+}
+
+.set-row.checked-done .set-label {
+    color: var(--color-success);
+}
+
+.set-inputs {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.set-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+.set-input-group input {
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-white);
+    width: 55px;
+    text-align: center;
+    padding: 3px 6px;
+    border-radius: 6px;
+    font-weight: 700;
+    outline: none;
+    font-family: inherit;
+    transition: var(--transition-smooth);
+}
+
+.set-input-group input:focus {
+    border-color: var(--color-primary);
+}
+
+.set-checkbox-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.set-checkmark {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-smooth);
+    background-color: var(--color-bg-card);
+}
+
+.set-checkmark i {
+    font-size: 0.75rem;
+    color: white;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: var(--transition-smooth);
+}
+
+.set-checkbox-input {
+    display: none;
+}
+
+.set-checkbox-input:checked + .set-checkmark {
+    background-color: var(--color-success);
+    border-color: var(--color-success);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+.set-checkbox-input:checked + .set-checkmark i {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Adjustments for uploader */
+@media (max-width: 768px) {
+    .wizard-layout-grid {
+        grid-template-columns: 1fr;
+        max-height: calc(85vh - 100px);
+    }
+}
+

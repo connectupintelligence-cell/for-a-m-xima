@@ -683,6 +683,132 @@
         </div>
     </div>
 
+    <!-- Autonomous Setup Wizard Modal -->
+    <div id="autonomous-setup-modal" class="modal-overlay hidden">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fa-solid fa-wand-magic-sparkles text-primary"></i> Montador de Treino Autônomo</h3>
+                <button class="modal-close-btn" onclick="closeAutonomousWizard()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="wizard-layout-grid">
+                <!-- Left: Catalog & Search -->
+                <div class="wizard-left-pane">
+                    <h4 class="sub-title">1. Escolha os Exercícios</h4>
+                    <div class="search-input-wrapper mb-3" style="width: 100%; min-width: 100%;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="wizard-search-input" placeholder="Buscar no catálogo..." oninput="filterWizardCatalog()">
+                    </div>
+                    <div class="muscle-groups-tabs" id="wizard-muscle-groups" style="margin-bottom: 12px; overflow-x: auto;">
+                        <!-- Loaded dynamically -->
+                    </div>
+                    <div class="wizard-catalog-list" id="wizard-catalog-list">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- Right: Configuration & Custom Exercise -->
+                <div class="wizard-right-pane">
+                    <div class="config-section card mb-4" id="wizard-config-card" style="display: none;">
+                        <h4 class="sub-title" id="wizard-config-title" style="color: var(--color-primary);"><i class="fa-solid fa-dumbbell"></i> Configurar Exercício</h4>
+                        <input type="hidden" id="wizard-selected-ex-id">
+                        
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label for="wizard-ex-workout">Destino (Treino)</label>
+                                <select id="wizard-ex-workout">
+                                    <option value="A" selected>Treino A</option>
+                                    <option value="B">Treino B</option>
+                                    <option value="C">Treino C</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="wizard-ex-sets">Séries (Quant. Repetir)</label>
+                                <input type="number" id="wizard-ex-sets" value="4" min="1" max="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="wizard-ex-reps">Repetições</label>
+                                <input type="number" id="wizard-ex-reps" value="10" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="wizard-ex-weight">Carga Sugerida (kg)</label>
+                                <input type="number" id="wizard-ex-weight" value="10" min="0">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-block mt-4" onclick="addExerciseFromWizard()"><i class="fa-solid fa-plus"></i> Adicionar ao Meu Treino</button>
+                    </div>
+
+                    <!-- Custom Exercise Creator -->
+                    <div class="card custom-exercise-card">
+                        <h4 class="sub-title"><i class="fa-solid fa-circle-plus text-secondary"></i> Criar Meu Próprio Exercício</h4>
+                        <form id="wizard-custom-ex-form" onsubmit="createCustomExercise(event)">
+                            <div class="form-group mb-2">
+                                <label for="custom-ex-name">Nome do Exercício</label>
+                                <input type="text" id="custom-ex-name" placeholder="Ex: Flexão de Braço Curvada" required>
+                            </div>
+                            <div class="form-group mb-2">
+                                <label for="custom-ex-muscle">Grupo Muscular</label>
+                                <select id="custom-ex-muscle" required>
+                                    <option value="peito">Peito</option>
+                                    <option value="costas">Costas</option>
+                                    <option value="pernas">Pernas</option>
+                                    <option value="ombros">Ombros</option>
+                                    <option value="bracos">Braços</option>
+                                    <option value="abdomen">Core</option>
+                                </select>
+                            </div>
+                            <div class="form-grid-2 mb-2">
+                                <div class="form-group">
+                                    <label for="custom-ex-workout">Destino (Treino)</label>
+                                    <select id="custom-ex-workout">
+                                        <option value="A" selected>Treino A</option>
+                                        <option value="B">Treino B</option>
+                                        <option value="C">Treino C</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="custom-ex-sets">Séries</label>
+                                    <input type="number" id="custom-ex-sets" value="3" min="1">
+                                </div>
+                            </div>
+                            <div class="form-grid-2 mb-2">
+                                <div class="form-group">
+                                    <label for="custom-ex-reps">Repetições</label>
+                                    <input type="number" id="custom-ex-reps" value="12" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="custom-ex-weight">Peso (kg)</label>
+                                    <input type="number" id="custom-ex-weight" value="0" min="0">
+                                </div>
+                            </div>
+                            <!-- Image Uploader Section -->
+                            <div class="form-group mb-3">
+                                <label>Foto do Exercício (Opcional)</label>
+                                <div class="image-upload-area" id="image-upload-dropzone">
+                                    <input type="file" id="custom-ex-photo-file" accept="image/*" onchange="previewCustomImage(event)" style="display: none;">
+                                    <div class="upload-trigger" onclick="document.getElementById('custom-ex-photo-file').click()">
+                                        <i class="fa-solid fa-camera upload-icon"></i>
+                                        <span>Clique para carregar foto</span>
+                                    </div>
+                                    <div class="upload-preview hidden" id="custom-ex-image-preview-container">
+                                        <img src="" id="custom-ex-image-preview" alt="Preview">
+                                        <button type="button" class="btn-remove-preview" onclick="clearPreviewImage()"><i class="fa-solid fa-circle-xmark"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-secondary btn-block"><i class="fa-solid fa-floppy-disk"></i> Salvar e Inserir</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wizard-footer-actions mt-4" style="display: flex; justify-content: flex-end; border-top: 1px solid var(--color-border); padding-top: 15px;">
+                <button class="btn btn-primary" onclick="closeAutonomousWizard()"><i class="fa-solid fa-circle-check"></i> Concluir e Visualizar Treino</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification for Micro-interactions -->
     <div id="toast" class="toast-notification hidden">
         <span id="toast-text">Exercício concluído! +10xp</span>

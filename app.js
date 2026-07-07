@@ -573,6 +573,33 @@ function initDb() {
 
     state.exercises = JSON.parse(localStorage.getItem("forca_maxima_exercises"));
     state.students = JSON.parse(localStorage.getItem("forca_maxima_students"));
+
+    // Migrate student workouts if in old schema
+    let migrated = false;
+    state.students.forEach(student => {
+        Object.keys(student.workouts).forEach(tab => {
+            student.workouts[tab].forEach(ex => {
+                if (ex.hasOwnProperty("sets") && !ex.hasOwnProperty("setsList")) {
+                    const setsCount = ex.sets || 3;
+                    ex.setsList = [];
+                    for (let i = 0; i < setsCount; i++) {
+                        ex.setsList.push({
+                            reps: ex.reps || 10,
+                            weight: ex.weight || 0,
+                            done: ex.done || false
+                        });
+                    }
+                    delete ex.sets;
+                    delete ex.reps;
+                    delete ex.weight;
+                    migrated = true;
+                }
+            });
+        });
+    });
+    if (migrated) {
+        saveDb();
+    }
 }
 
 function saveDb() {
@@ -864,55 +891,79 @@ function loadStudentExercisesList(tabLetter) {
     }
 
     exercisesList.forEach((workoutEx, index) => {
-        // Find complete details in exercises database
         const details = state.exercises.find(e => e.id === workoutEx.id);
         if (!details) return;
 
+        // Ensure setsList exists (robust migration fallback)
+        if (!workoutEx.setsList) {
+            workoutEx.setsList = [];
+            const count = workoutEx.sets || 3;
+            for (let i = 0; i < count; i++) {
+                workoutEx.setsList.push({ reps: workoutEx.reps || 10, weight: workoutEx.weight || 10, done: false });
+            }
+            delete workoutEx.sets;
+        }
+
+        const isCompleted = workoutEx.setsList.every(s => s.done);
+        workoutEx.done = isCompleted;
+
         const card = document.createElement("div");
-        card.className = `exercise-card ${workoutEx.done ? "done-checked" : ""}`;
+        card.className = `exercise-card ${isCompleted ? "done-checked" : ""}`;
         
-        // Load animated SVG inline
-        const svgContent = SVG_TEMPLATES[details.svgType] || "";
+        // Render either visual SVG or Custom Uploaded Photo
+        let visualContent = "";
+        if (workoutEx.isCustom && workoutEx.customPhoto) {
+            visualContent = `<img src="${workoutEx.customPhoto}" alt="${details.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">`;
+        } else {
+            visualContent = SVG_TEMPLATES[details.svgType] || "";
+        }
 
         card.innerHTML = `
-            <!-- Checkbox -->
-            <div class="exercise-check-wrapper">
-                <label class="exercise-checkbox-label">
-                    <input type="checkbox" ${workoutEx.done ? "checked" : ""} onchange="toggleExerciseCheck('${tabLetter}', ${index}, this.checked)">
-                    <span class="checkmark"><i class="fa-solid fa-check"></i></span>
-                </label>
+            <!-- Left: Visualization preview -->
+            <div class="exercise-image-placeholder" onclick="${workoutEx.isCustom && workoutEx.customPhoto ? '' : `openExerciseDemo('${details.id}')`}">
+                ${visualContent}
+                ${workoutEx.isCustom && workoutEx.customPhoto ? '' : `<div class="play-overlay"><i class="fa-solid fa-play"></i></div>`}
             </div>
 
-            <!-- Visualization preview -->
-            <div class="exercise-image-placeholder" onclick="openExerciseDemo('${details.id}')">
-                ${svgContent}
-                <div class="play-overlay"><i class="fa-solid fa-play"></i></div>
-            </div>
-
-            <!-- Text details -->
+            <!-- Middle: Text details -->
             <div class="exercise-info">
                 <h3 class="exercise-name">${details.name}</h3>
                 <div class="exercise-meta">
                     <span><i class="fa-solid fa-bullseye"></i> Alvo: <strong>${details.target}</strong></span>
-                    <span><i class="fa-solid fa-arrows-spin"></i> Recomendado: <strong>${workoutEx.sets}x${workoutEx.reps} (${workoutEx.weight}kg)</strong></span>
+                    <span><i class="fa-solid fa-layer-group"></i> Total de Séries: <strong>${workoutEx.setsList.length}</strong></span>
                 </div>
-            </div>
 
-            <!-- Real-time weight and reps tracker input -->
-            <div class="exercise-tracker-inputs">
-                <div class="tracker-input-group">
-                    <label>Peso (kg)</label>
-                    <input type="number" value="${workoutEx.weight}" onchange="updateExerciseWeight('${tabLetter}', ${index}, this.value)">
-                </div>
-                <div class="tracker-input-group">
-                    <label>Reps</label>
-                    <input type="number" value="${workoutEx.reps}" onchange="updateExerciseReps('${tabLetter}', ${index}, this.value)">
+                <!-- Set-by-Set Logging Rows -->
+                <div class="exercise-sets-tracker">
+                    ${workoutEx.setsList.map((set, setIdx) => `
+                        <div class="set-row ${set.done ? 'checked-done' : ''}">
+                            <span class="set-label">Série ${setIdx + 1}</span>
+                            
+                            <div class="set-inputs">
+                                <div class="set-input-group">
+                                    <label>Carga</label>
+                                    <input type="number" value="${set.weight}" onchange="updateSetWeight('${tabLetter}', ${index}, ${setIdx}, this.value)"> kg
+                                </div>
+                                <div class="set-input-group">
+                                    <label>Reps</label>
+                                    <input type="number" value="${set.reps}" onchange="updateSetReps('${tabLetter}', ${index}, ${setIdx}, this.value)">
+                                </div>
+                            </div>
+
+                            <div class="set-checkbox-wrapper">
+                                <label>
+                                    <input type="checkbox" class="set-checkbox-input" ${set.done ? 'checked' : ''} onchange="toggleSetCheck('${tabLetter}', ${index}, ${setIdx}, this.checked)">
+                                    <span class="set-checkmark"><i class="fa-solid fa-check"></i></span>
+                                </label>
+                            </div>
+                        </div>
+                    `).join('')}
                 </div>
             </div>
 
             <!-- Quick Delete if Autonomous mode -->
             ${student.workoutOrigin === "custom" ? `
-                <button class="btn-icon-danger" onclick="removeExerciseFromCustomWorkout('${tabLetter}', ${index})">
+                <button class="btn-icon-danger" style="align-self: flex-start; margin-top: 5px;" onclick="removeExerciseFromCustomWorkout('${tabLetter}', ${index})">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             ` : ""}
@@ -933,50 +984,6 @@ function setWorkoutOrigin(origin) {
     
     renderAlunoTreinos();
     showToast(`Modo de Treino alterado para: ${origin === 'teacher' ? 'Professor' : 'Autônomo'}`);
-}
-
-function toggleExerciseCheck(tabLetter, index, isChecked) {
-    const student = state.students.find(s => s.id === state.currentStudentId);
-    if (!student) return;
-
-    student.workouts[tabLetter][index].done = isChecked;
-    saveDb();
-
-    // Visual effect updates
-    loadStudentExercisesList(tabLetter);
-
-    if (isChecked) {
-        showToast("Exercício feito! +10 XP 🔥");
-        
-        // Also check if all exercises in this tab are done. If so, automatically mark today as checked-in streak!
-        const tabList = student.workouts[tabLetter];
-        const allDone = tabList.every(ex => ex.done);
-        if (allDone) {
-            const today = new Date().getDay(); // 0 to 6
-            student.streak[today] = true;
-            saveDb();
-            renderAlunoDashboard();
-            showToast("Treino Completo! Streak Semanal atualizado! 🌟");
-        }
-    }
-}
-
-function updateExerciseWeight(tabLetter, index, weight) {
-    const student = state.students.find(s => s.id === state.currentStudentId);
-    if (!student) return;
-    
-    student.workouts[tabLetter][index].weight = parseInt(weight) || 0;
-    saveDb();
-    showToast("Peso atualizado no treino.");
-}
-
-function updateExerciseReps(tabLetter, index, reps) {
-    const student = state.students.find(s => s.id === state.currentStudentId);
-    if (!student) return;
-    
-    student.workouts[tabLetter][index].reps = parseInt(reps) || 0;
-    saveDb();
-    showToast("Repetições atualizadas.");
 }
 
 function removeExerciseFromCustomWorkout(tabLetter, index) {
@@ -1010,7 +1017,6 @@ function loadStudentFormOnboarding() {
     const radio = document.querySelector(`input[name="preference-origin"][value="${student.workoutOrigin}"]`);
     if (radio) radio.checked = true;
 }
-
 function saveStudentRegistration(event) {
     event.preventDefault();
 
@@ -1039,7 +1045,12 @@ function saveStudentRegistration(event) {
     renderAlunoTreinos();
     
     showToast("Avaliação Física e dados salvos com sucesso! 💾");
-    scrollToView("aluno-dashboard");
+    
+    if (student.workoutOrigin === "custom") {
+        openAutonomousWizard();
+    } else {
+        scrollToView("aluno-dashboard");
+    }
 }
 
 // Payment Selection & Operations
@@ -1401,6 +1412,20 @@ function loadEditorExercises() {
         const details = state.exercises.find(e => e.id === workoutEx.id);
         if (!details) return;
 
+        // Fallback check
+        if (!workoutEx.setsList) {
+            workoutEx.setsList = [];
+            const count = workoutEx.sets || 3;
+            for (let i = 0; i < count; i++) {
+                workoutEx.setsList.push({ reps: workoutEx.reps || 10, weight: workoutEx.weight || 10, done: false });
+            }
+            delete workoutEx.sets;
+        }
+
+        const setsCount = workoutEx.setsList.length;
+        const repsVal = workoutEx.setsList[0] ? workoutEx.setsList[0].reps : 10;
+        const weightVal = workoutEx.setsList[0] ? workoutEx.setsList[0].weight : 0;
+
         const div = document.createElement("div");
         div.className = "editor-exercise-item";
         div.innerHTML = `
@@ -1415,15 +1440,15 @@ function loadEditorExercises() {
             <div class="editor-ex-inputs">
                 <div class="tracker-input-group">
                     <label>Séries</label>
-                    <input type="number" value="${workoutEx.sets}" onchange="updateEditorExerciseSets(${index}, this.value)">
+                    <input type="number" value="${setsCount}" onchange="updateEditorExerciseSets(${index}, this.value)">
                 </div>
                 <div class="tracker-input-group">
                     <label>Reps</label>
-                    <input type="number" value="${workoutEx.reps}" onchange="updateEditorExerciseReps(${index}, this.value)">
+                    <input type="number" value="${repsVal}" onchange="updateEditorExerciseReps(${index}, this.value)">
                 </div>
                 <div class="tracker-input-group">
                     <label>Peso (kg)</label>
-                    <input type="number" value="${workoutEx.weight}" onchange="updateEditorExerciseWeight(${index}, this.value)">
+                    <input type="number" value="${weightVal}" onchange="updateEditorExerciseWeight(${index}, this.value)">
                 </div>
                 <button class="btn-icon-danger" onclick="removeExerciseFromEditor(${index})">
                     <i class="fa-solid fa-trash"></i>
@@ -1436,17 +1461,40 @@ function loadEditorExercises() {
 
 function updateEditorExerciseSets(index, val) {
     const student = state.students.find(s => s.id === state.editingStudentId);
-    student.workouts[state.editingActiveTab][index].sets = parseInt(val) || 0;
+    const workoutEx = student.workouts[state.editingActiveTab][index];
+    const newSetsCount = parseInt(val) || 1;
+    
+    const currentSetsCount = workoutEx.setsList.length;
+    const defaultReps = workoutEx.setsList[0] ? workoutEx.setsList[0].reps : 10;
+    const defaultWeight = workoutEx.setsList[0] ? workoutEx.setsList[0].weight : 0;
+
+    if (newSetsCount > currentSetsCount) {
+        for (let i = currentSetsCount; i < newSetsCount; i++) {
+            workoutEx.setsList.push({ reps: defaultReps, weight: defaultWeight, done: false });
+        }
+    } else if (newSetsCount < currentSetsCount) {
+        workoutEx.setsList.splice(newSetsCount);
+    }
 }
 
 function updateEditorExerciseReps(index, val) {
     const student = state.students.find(s => s.id === state.editingStudentId);
-    student.workouts[state.editingActiveTab][index].reps = parseInt(val) || 0;
+    const workoutEx = student.workouts[state.editingActiveTab][index];
+    const newReps = parseInt(val) || 10;
+    
+    workoutEx.setsList.forEach(set => {
+        set.reps = newReps;
+    });
 }
 
 function updateEditorExerciseWeight(index, val) {
     const student = state.students.find(s => s.id === state.editingStudentId);
-    student.workouts[state.editingActiveTab][index].weight = parseInt(val) || 0;
+    const workoutEx = student.workouts[state.editingActiveTab][index];
+    const newWeight = parseInt(val) || 0;
+    
+    workoutEx.setsList.forEach(set => {
+        set.weight = newWeight;
+    });
 }
 
 function removeExerciseFromEditor(index) {
@@ -1623,6 +1671,12 @@ function toggleStudentPaymentAdmin(studentId) {
 
 // Exercise Catalog for adding exercises (Either student or teacher editor)
 function openExerciseCatalog() {
+    const student = state.students.find(s => s.id === state.currentStudentId);
+    if (student && student.workoutOrigin === "custom") {
+        openAutonomousWizard();
+        return;
+    }
+
     const modal = document.getElementById("exercise-catalog-modal");
     modal.classList.remove("hidden");
     
@@ -1709,14 +1763,22 @@ function addExerciseFromCatalog(exerciseId, isEditor) {
     const templateEx = state.exercises.find(e => e.id === exerciseId);
     if (!templateEx) return;
 
+    // Build setsList
+    const setsList = [];
+    const setsCount = templateEx.defaultSets || 3;
+    for (let i = 0; i < setsCount; i++) {
+        setsList.push({
+            reps: templateEx.defaultReps || 10,
+            weight: templateEx.defaultWeight || 0,
+            done: false
+        });
+    }
+
     if (isEditor) {
         // Teacher Editor mode
         const student = state.students.find(s => s.id === state.editingStudentId);
-        
-        // Add to active editing tab A, B, C
         const workoutList = student.workouts[state.editingActiveTab];
         
-        // Check duplication
         const exists = workoutList.some(e => e.id === exerciseId);
         if (exists) {
             showToast("Este exercício já está na ficha do aluno!");
@@ -1725,9 +1787,8 @@ function addExerciseFromCatalog(exerciseId, isEditor) {
 
         workoutList.push({
             id: exerciseId,
-            sets: templateEx.defaultSets,
-            reps: templateEx.defaultReps,
-            weight: templateEx.defaultWeight,
+            isCustom: false,
+            setsList: setsList,
             done: false
         });
 
@@ -1737,8 +1798,6 @@ function addExerciseFromCatalog(exerciseId, isEditor) {
     } else {
         // Student Autonomous mode (customizes their own worksheet)
         const student = state.students.find(s => s.id === state.currentStudentId);
-        
-        // We will insert into the currently active visual tab
         const activeTab = getActiveWorkoutTab();
         const workoutList = student.workouts[activeTab];
 
@@ -1750,13 +1809,11 @@ function addExerciseFromCatalog(exerciseId, isEditor) {
 
         workoutList.push({
             id: exerciseId,
-            sets: templateEx.defaultSets,
-            reps: templateEx.defaultReps,
-            weight: templateEx.defaultWeight,
+            isCustom: false,
+            setsList: setsList,
             done: false
         });
 
-        // Set to custom if they are changing stuff!
         student.workoutOrigin = "custom";
         saveDb();
 
@@ -1815,4 +1872,295 @@ function formatDate(dateStr) {
     const parts = dateStr.split("-");
     if (parts.length !== 3) return dateStr;
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+// ==========================================
+// AUTONOMOUS WORKOUT BUILDER WIZARD (UPDATE 1)
+// ==========================================
+let wizardState = {
+    selectedExerciseId: null,
+    activeMuscleGroup: "todos",
+    customPhotoBase64: null
+};
+
+function openAutonomousWizard() {
+    const modal = document.getElementById("autonomous-setup-modal");
+    modal.classList.remove("hidden");
+    
+    // Reset inputs
+    document.getElementById("wizard-search-input").value = "";
+    document.getElementById("wizard-config-card").style.display = "none";
+    clearPreviewImage();
+    
+    renderWizardMuscleGroups();
+    loadWizardCatalog("todos");
+}
+
+function closeAutonomousWizard() {
+    document.getElementById("autonomous-setup-modal").classList.add("hidden");
+    renderAlunoTreinos();
+    renderAlunoDashboard();
+    scrollToView("aluno-treinos");
+}
+
+function renderWizardMuscleGroups() {
+    const container = document.getElementById("wizard-muscle-groups");
+    container.innerHTML = "";
+
+    const groups = [
+        { id: "todos", name: "Todos" },
+        { id: "peito", name: "Peito" },
+        { id: "costas", name: "Costas" },
+        { id: "pernas", name: "Pernas" },
+        { id: "ombros", name: "Ombros" },
+        { id: "bracos", name: "Braços" },
+        { id: "abdomen", name: "Core" }
+    ];
+
+    groups.forEach((group, index) => {
+        const btn = document.createElement("button");
+        btn.className = `tab-btn ${wizardState.activeMuscleGroup === group.id ? "active" : ""}`;
+        btn.textContent = group.name;
+        btn.onclick = () => {
+            container.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            wizardState.activeMuscleGroup = group.id;
+            loadWizardCatalog(group.id);
+        };
+        container.appendChild(btn);
+    });
+}
+
+function loadWizardCatalog(groupId) {
+    const container = document.getElementById("wizard-catalog-list");
+    container.innerHTML = "";
+
+    const searchVal = document.getElementById("wizard-search-input").value.toLowerCase();
+
+    const filtered = state.exercises.filter(ex => {
+        const matchesMuscle = (groupId === "todos" || ex.muscleGroup === groupId);
+        const matchesSearch = ex.name.toLowerCase().includes(searchVal) || ex.target.toLowerCase().includes(searchVal);
+        return matchesMuscle && matchesSearch;
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center text-muted p-4">Nenhum exercício encontrado.</div>`;
+        return;
+    }
+
+    filtered.forEach(ex => {
+        const card = document.createElement("div");
+        card.className = `wizard-item-card ${wizardState.selectedExerciseId === ex.id ? "selected" : ""}`;
+        card.innerHTML = `
+            <div class="wizard-item-text">
+                <strong>${ex.name}</strong>
+                <span>${ex.target}</span>
+            </div>
+            <i class="fa-solid fa-chevron-right text-muted"></i>
+        `;
+        card.onclick = () => {
+            container.querySelectorAll(".wizard-item-card").forEach(c => c.classList.remove("selected"));
+            card.classList.add("selected");
+            selectExerciseInWizard(ex.id);
+        };
+        container.appendChild(card);
+    });
+}
+
+function filterWizardCatalog() {
+    loadWizardCatalog(wizardState.activeMuscleGroup);
+}
+
+function selectExerciseInWizard(exerciseId) {
+    const ex = state.exercises.find(e => e.id === exerciseId);
+    if (!ex) return;
+
+    wizardState.selectedExerciseId = exerciseId;
+    
+    // Show configuration card
+    const configCard = document.getElementById("wizard-config-card");
+    configCard.style.display = "block";
+    
+    document.getElementById("wizard-selected-ex-id").value = exerciseId;
+    document.getElementById("wizard-config-title").innerHTML = `<i class="fa-solid fa-dumbbell"></i> Configurar: ${ex.name}`;
+    
+    // Reset configs to defaults
+    document.getElementById("wizard-ex-sets").value = ex.defaultSets || 4;
+    document.getElementById("wizard-ex-reps").value = ex.defaultReps || 10;
+    document.getElementById("wizard-ex-weight").value = ex.defaultWeight || 10;
+}
+
+function addExerciseFromWizard() {
+    const exId = document.getElementById("wizard-selected-ex-id").value;
+    const targetWorkout = document.getElementById("wizard-ex-workout").value;
+    const sets = parseInt(document.getElementById("wizard-ex-sets").value) || 4;
+    const reps = parseInt(document.getElementById("wizard-ex-reps").value) || 10;
+    const weight = parseInt(document.getElementById("wizard-ex-weight").value) || 0;
+
+    const student = state.students.find(s => s.id === state.currentStudentId);
+    if (!student) return;
+
+    // Check duplication
+    if (!student.workouts[targetWorkout]) {
+        student.workouts[targetWorkout] = [];
+    }
+
+    const exists = student.workouts[targetWorkout].some(e => e.id === exId);
+    if (exists) {
+        showToast("Este exercício já está no Treino " + targetWorkout);
+        return;
+    }
+
+    // Build setsList
+    const setsList = [];
+    for (let i = 0; i < sets; i++) {
+        setsList.push({ reps: reps, weight: weight, done: false });
+    }
+
+    student.workouts[targetWorkout].push({
+        id: exId,
+        isCustom: false,
+        setsList: setsList,
+        done: false
+    });
+
+    student.workoutOrigin = "custom";
+    saveDb();
+    
+    showToast("Exercício adicionado ao Treino " + targetWorkout + "! 🏋️");
+}
+
+// Image uploading & preview
+function previewCustomImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        wizardState.customPhotoBase64 = e.target.result;
+        
+        // Show preview
+        document.getElementById("custom-ex-image-preview").src = e.target.result;
+        document.getElementById("custom-ex-image-preview-container").classList.remove("hidden");
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearPreviewImage() {
+    wizardState.customPhotoBase64 = null;
+    document.getElementById("custom-ex-photo-file").value = "";
+    document.getElementById("custom-ex-image-preview-container").classList.add("hidden");
+    document.getElementById("custom-ex-image-preview").src = "";
+}
+
+function createCustomExercise(event) {
+    event.preventDefault();
+
+    const name = document.getElementById("custom-ex-name").value;
+    const muscle = document.getElementById("custom-ex-muscle").value;
+    const targetWorkout = document.getElementById("custom-ex-workout").value;
+    const sets = parseInt(document.getElementById("custom-ex-sets").value) || 3;
+    const reps = parseInt(document.getElementById("custom-ex-reps").value) || 12;
+    const weight = parseInt(document.getElementById("custom-ex-weight").value) || 0;
+
+    const student = state.students.find(s => s.id === state.currentStudentId);
+    if (!student) return;
+
+    // Create unique ID
+    const newExId = "ex-custom-" + Date.now();
+
+    // 1. Add to global exercises database
+    const newExerciseObj = {
+        id: newExId,
+        name: name,
+        muscleGroup: muscle,
+        target: "Exercício Personalizado (" + muscle.toUpperCase() + ")",
+        defaultSets: sets,
+        defaultReps: reps,
+        defaultWeight: weight,
+        description: "Exercício criado pelo aluno.",
+        tip: "Acompanhe sua postura.",
+        svgType: "custom"
+    };
+
+    state.exercises.push(newExerciseObj);
+    localStorage.setItem("forca_maxima_exercises", JSON.stringify(state.exercises));
+
+    // 2. Add to student workout
+    if (!student.workouts[targetWorkout]) {
+        student.workouts[targetWorkout] = [];
+    }
+
+    const setsList = [];
+    for (let i = 0; i < sets; i++) {
+        setsList.push({ reps: reps, weight: weight, done: false });
+    }
+
+    student.workouts[targetWorkout].push({
+        id: newExId,
+        isCustom: true,
+        customPhoto: wizardState.customPhotoBase64,
+        setsList: setsList,
+        done: false
+    });
+
+    student.workoutOrigin = "custom";
+    saveDb();
+
+    // Reset Form
+    document.getElementById("custom-ex-name").value = "";
+    clearPreviewImage();
+
+    // Reload catalog in wizard
+    loadWizardCatalog(wizardState.activeMuscleGroup);
+    
+    showToast("Exercício '" + name + "' criado e adicionado ao Treino " + targetWorkout + "! 📸");
+}
+
+function toggleSetCheck(tabLetter, index, setIdx, isChecked) {
+    const student = state.students.find(s => s.id === state.currentStudentId);
+    if (!student) return;
+
+    student.workouts[tabLetter][index].setsList[setIdx].done = isChecked;
+    
+    // Recalculate card completion status
+    const workoutEx = student.workouts[tabLetter][index];
+    const allDone = workoutEx.setsList.every(s => s.done);
+    workoutEx.done = allDone;
+
+    saveDb();
+
+    // Reload workouts list to update visual styles
+    loadStudentExercisesList(tabLetter);
+
+    if (isChecked) {
+        showToast(`Série ${setIdx + 1} concluída! 💪`);
+        
+        // Check if all exercises are done to update streak
+        const tabList = student.workouts[tabLetter];
+        const allExercisesDone = tabList.every(ex => ex.done);
+        if (allExercisesDone) {
+            const today = new Date().getDay();
+            student.streak[today] = true;
+            saveDb();
+            renderAlunoDashboard();
+            showToast("Treino Completo! Streak Semanal atualizado! 🌟");
+        }
+    }
+}
+
+function updateSetWeight(tabLetter, index, setIdx, weight) {
+    const student = state.students.find(s => s.id === state.currentStudentId);
+    if (!student) return;
+
+    student.workouts[tabLetter][index].setsList[setIdx].weight = parseInt(weight) || 0;
+    saveDb();
+}
+
+function updateSetReps(tabLetter, index, setIdx, reps) {
+    const student = state.students.find(s => s.id === state.currentStudentId);
+    if (!student) return;
+
+    student.workouts[tabLetter][index].setsList[setIdx].reps = parseInt(reps) || 0;
+    saveDb();
 }
