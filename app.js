@@ -930,7 +930,7 @@ function loadStudentExercisesList(tabLetter) {
                 <h3 class="exercise-name">${details.name}</h3>
                 <div class="exercise-meta">
                     <span><i class="fa-solid fa-bullseye"></i> Alvo: <strong>${details.target}</strong></span>
-                    <span><i class="fa-solid fa-layer-group"></i> Total de Séries: <strong>${workoutEx.setsList.length}</strong></span>
+                    <span><i class="fa-solid fa-arrows-spin"></i> Recomendado: <strong>${workoutEx.setsList.length}x${workoutEx.setsList[0]?.reps || 10} (${workoutEx.setsList[0]?.weight || 0}kg)</strong></span>
                 </div>
 
                 <!-- Set-by-Set Logging Rows -->
